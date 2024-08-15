@@ -26,10 +26,11 @@ year: Year that you want the schdule tracker to be created. This will create tab
 #>
 
 param (
-    [int]$year = (Get-Date).Year
+    [int]$year = (Get-Date).Year,
+    [int]$teamsize = 8
 )
 
-Write-Host "`n`nCreating ScheduleTracker_$year.xlsx .........." -ForegroundColor Blue
+Write-Host "`n`nCreating ScheduleTracker_$year.xlsx for a team of $teamsize.........." -ForegroundColor Blue
 
 # Load the Excel COM object
 $excel = New-Object -ComObject Excel.Application
@@ -125,7 +126,7 @@ for ($month = 1; $month -le 12; $month++) {
     Write-Host "Generating Table for $monthName" -ForegroundColor Cyan
     
     # Calculate the starting row for each month's table
-    $startRow = ($month - 1) * 10 + 1
+    $startRow = ($month - 1) * ($teamsize + 2) + 1
 
     # Merge cells for the month name header
     $worksheet.Cells.Item($startRow, 1).Value = $monthName
@@ -139,6 +140,9 @@ for ($month = 1; $month -le 12; $month++) {
     $worksheet.Cells.Item($startRow+1, 1).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)  # Set background color
     $worksheet.Cells.Item($startRow+1, 1).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::White)  # Set font color
     
+    # hash table to store the weekend columns
+    $weekendColumns = @()
+
     # Set the main headers (dates of the month)
     for ($i = 1; $i -le $daysInMonth; $i++) {
         $date = Get-Date -Year $year -Month $month -Day $i
@@ -146,6 +150,7 @@ for ($month = 1; $month -le 12; $month++) {
         $worksheet.Cells.Item($startRow + 1, $i + 1) = $daysOfWeek[$date.DayOfWeek.value__]
         if ($daysOfWeek[$date.DayOfWeek.value__] -eq "Sa" -or $daysOfWeek[$date.DayOfWeek.value__] -eq "Su") {
             $worksheet.Cells.Item($startRow +1 , $i + 1).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)  # Set background color
+            $weekendColumns += ($i + 1)
         }
         # I want to set the column width to 5 pixels for each day
         $worksheet.Columns.Item($i + 1).ColumnWidth = 5
@@ -155,7 +160,7 @@ for ($month = 1; $month -le 12; $month++) {
  
     
     # Create the drop-down list for the main data column
-    for ($i = $startRow + 2; $i -le $startRow + 9; $i++) {
+    for ($i = $startRow + 2; $i -le $startRow + $teamsize + 1; $i++) {
         for ($j = 2; $j -le $daysInMonth + 1; $j++) {
             $cell = $worksheet.Cells.Item($i, $j)
             $validation = $cell.Validation
@@ -163,6 +168,11 @@ for ($month = 1; $month -le 12; $month++) {
             $validation.Add(3, 1, 1, $values)
             $validation.IgnoreBlank = $true
             $validation.InCellDropdown = $true
+
+            # Check if the column index is in the $weekendColumns array
+        if ($weekendColumns -contains $j) {
+            $cell.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)
+        }
         }
         # Set the excel formulas after the headers are set hence the $startRow+2 
         SetExcelFormulas $i $lastColumn
@@ -191,6 +201,10 @@ $formatConditionOB.Font.Bold = $true
 $formatConditionOS = $range.FormatConditions.Add(1, 3, "APE")  # xlCellValue = 1, xlEqual = 1
 $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
 $formatConditionOS.Font.Bold = $true
+
+$formatConditionH = $range.FormatConditions.Add(1, 3, "H")  # xlCellValue = 1, xlEqual = 1
+$formatConditionH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)
+$formatConditionH.Font.Bold = $true
 
 $workbook.SaveAs($filePath)
 $workbook.Close()
