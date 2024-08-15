@@ -1,4 +1,36 @@
 
+<#
+.SYNOPSIS
+Series of commands that helps build the CheckinApp to local server
+
+.DESCRIPTION
+  Performs building and running the CheckinApp. 
+
+.PARAMETER year
+  -$year -branchName parameter will pull and checkout desired branch.
+
+.EXAMPLE 
+    .\create.schedule.ps1 -year 2025
+    ./create.schedule.ps1  
+
+.NOTES
+/*==================================================================================================
+ = This file is part of the Navitaire CheckinApp application.
+ = Copyright © Navitaire LLC, an Amadeus company. All rights reserved.
+ =================================================================================================*/
+#>
+
+<# 
+.PARAMETERS EXPLANATION:
+year: Year that you want the schdule tracker to be created. This will create table from January to December When blank it will default to the current year.
+#>
+
+param (
+    [int]$year = (Get-Date).Year
+)
+
+Write-Host "`n`nCreating ScheduleTracker_$year.xlsx .........." -ForegroundColor Blue
+
 # Load the Excel COM object
 $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $true
@@ -10,28 +42,87 @@ $worksheet = $workbook.Worksheets.Item(1)
 # Define the headers
 $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
 $values = "APE,OS,PTO,PTH,OB,H"
-$AH=34
-$AI=35
-$AJ=36
-$AK=37
-$AL=38
-$AM=39
-$AN=40
+$columnMapping = @{
+    30 = "AD"
+    31 = "AE"
+    32 = "AF"
+    33 = "AG"
+    34 = "AH"
+    35 = "AI"
+    36 = "AJ"
+    37 = "AK"
+    38 = "AL"
+    39 = "AM"
+    40 = "AN"
+    41 = "AO"
+}
+
+# Create a reverse mapping hashtable to map string values to integer representations
+$reverseColumnMapping = @{}
+foreach ($key in $columnMapping.Keys) {
+    $reverseColumnMapping[$columnMapping[$key]] = $key
+}
+$weekdayColumnValue=$reverseColumnMapping["AG"]
+$holidayColumnValue=$reverseColumnMapping["AH"]
+$workingDaysColumnValue=$reverseColumnMapping["AI"]
+$OSColumnValue = $reverseColumnMapping["AJ"]
+$PTOColumnValue = $reverseColumnMapping["AK"]
+$PTHColumnValue = $reverseColumnMapping["AL"]
+$OBColumnValue = $reverseColumnMapping["AM"]
+$APEColumnValue = $reverseColumnMapping["AN"]
+$percentColumnValue = $reverseColumnMapping["AO"]
+
+function SetFormulaHeaders ($startRow, $lastCol) {
+    $nextRow = $startRow + 1
+    # Set the headers for columns with formulas 
+    $worksheet.Cells.Item($startRow, $weekdayColumnValue) = "Weekdays"
+    $worksheet.Cells.Item($startRow, $weekdayColumnValue).Font.Bold = $true
+    $worksheet.Cells.Item($startRow, $weekdayColumnValue).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)  # Set background color
+    # Set the formula for weekdays
+    $worksheet.Cells.Item($nextRow, $weekdayColumnValue).Formula = "=COUNTIF(B$($startRow + 1):AF$($startRow+1), `"M`") + COUNTIF(B$($startRow + 1):AF$($startRow+1), `"T`") + COUNTIF(B$($startRow + 1):AF$($startRow+1), `"W`") + COUNTIF(B$($startRow + 1):AF$($startRow+1), `"Th`") + COUNTIF(B$($startRow + 1):AF$($startRow+1), `"F`")"
+    $worksheet.Cells.Item($startRow, $holidayColumnValue) = "Holidays"
+    $worksheet.Cells.Item($startRow, $holidayColumnValue).Font.Bold = $true
+    $worksheet.Cells.Item($startRow, $holidayColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)  # Set font color
+    # Set the formula for holidays
+    $worksheet.Cells.Item($nextRow, $holidayColumnValue).Formula = "=COUNTIF(B$($startRow + 3):AF$($startRow+3), `"H`")"
+    $worksheet.Cells.Item($startRow, $workingDaysColumnValue) = "Working Days"
+    $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Font.Bold = $true
+    $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)  # Set background color
+    # Set the formula for working days
+    $worksheet.Cells.Item($nextRow, $workingDaysColumnValue).Formula = "=AG$nextRow - AH$nextRow"
+    $worksheet.Cells.Item($nextRow, $OSColumnValue) = "OS"
+    $worksheet.Cells.Item($nextRow, $PTOColumnValue) = "PTO"
+    $worksheet.Cells.Item($nextRow, $PTHColumnValue) = "PTH"
+    $worksheet.Cells.Item($nextRow, $OBColumnValue) = "OB"
+    $worksheet.Cells.Item($nextRow, $APEColumnValue) = "APE"
+    $worksheet.Cells.Item($nextRow, $percentColumnValue) = "%"
+    $worksheet.Cells.Item($startRow, $percentColumnValue).HorizontalAlignment = -4108  # Center alignment 
+    $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Bold = $true
+    $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
+}
+function SetExcelFormulas ($startRow, $lastCol) {
+    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"OS`")"
+    $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"PTO`")"
+    $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"PTH`")/2"
+    $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"OB`")"
+    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"APE`")/2"
+}
 
 # Get the current directory
 $currentDirectory = Get-Location
-$currentYear = (Get-Date).Year
-$filePath= "$currentDirectory\ScheduleTracker_$currentYear.xlsx"
+$filePath= "$currentDirectory\ScheduleTracker_$year.xlsx"
 
 if (Test-Path $filePath) {
     Remove-Item -Path $filePath
 }
 
-# Loop through each month of the year
+# Loop through each month of the year that was specified
 for ($month = 1; $month -le 12; $month++) {
     
-    $daysInMonth = [DateTime]::DaysInMonth($currentYear, $month)
-    $monthName = (Get-Date -Year $currentYear -Month $month -Day 1).ToString("MMMM")
+    
+    $daysInMonth = [DateTime]::DaysInMonth($year, $month)
+    $monthName = (Get-Date -Year $year -Month $month -Day 1).ToString("MMMM")
+    Write-Host "Generating Table for $monthName" -ForegroundColor Cyan
     
     # Calculate the starting row for each month's table
     $startRow = ($month - 1) * 10 + 1
@@ -50,7 +141,7 @@ for ($month = 1; $month -le 12; $month++) {
     
     # Set the main headers (dates of the month)
     for ($i = 1; $i -le $daysInMonth; $i++) {
-        $date = Get-Date -Year $currentYear -Month $month -Day $i
+        $date = Get-Date -Year $year -Month $month -Day $i
         $worksheet.Cells.Item($startRow, $i + 1) = $date.ToString("dd")
         $worksheet.Cells.Item($startRow + 1, $i + 1) = $daysOfWeek[$date.DayOfWeek.value__]
         if ($daysOfWeek[$date.DayOfWeek.value__] -eq "Sa" -or $daysOfWeek[$date.DayOfWeek.value__] -eq "Su") {
@@ -59,27 +150,9 @@ for ($month = 1; $month -le 12; $month++) {
         # I want to set the column width to 5 pixels for each day
         $worksheet.Columns.Item($i + 1).ColumnWidth = 5
     }
-    
-    # Set the secondary header always 
-    $worksheet.Cells.Item($startRow, $AH) = "Working Days"
-    $worksheet.Cells.Item($startRow, $AH).Font.Bold = $true
-    $worksheet.Cells.Item($startRow, $AH).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)  # Set background color
-    $worksheet.Cells.Item($startRow, $AI) = "Holidays"
-    $worksheet.Cells.Item($startRow, $AI).Font.Bold = $true
-    $worksheet.Cells.Item($startRow, $AI).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)  # Set font color
-
-    $worksheet.Cells.Item($startRow, $AJ) = "OS"
     $lastColumn = $worksheet.Cells.Item($startRow + 1, $daysInMonth + 1).Address(0, 0)
-    $worksheet.Cells.Item($startRow + 2, $AJ).Formula = "=COUNTIF(B$($startRow + 3):$lastColumn, `"OS`")"
-    $worksheet.Cells.Item($startRow, $AK) = "PTO"
-    $worksheet.Cells.Item($startRow + 2, $AK).Formula = "=COUNTIF(B$($startRow + 3):$lastColumn, `"PTO`")"
-    $worksheet.Cells.Item($startRow, $AL) = "PTH"
-    $worksheet.Cells.Item($startRow + 2, $AL).Formula = "=COUNTIF(B$($startRow + 3):$lastColumn, `"PTH`")/2"
-    $worksheet.Cells.Item($startRow, $AM) = "OB"
-    $worksheet.Cells.Item($startRow + 2, $AM).Formula = "=COUNTIF(B$($startRow + 3):$lastColumn, `"OB`")"
-    $worksheet.Cells.Item($startRow, $AN) = "APE"
-    $worksheet.Cells.Item($startRow + 2, $AN).Formula = "=COUNTIF(B$($startRow + 3):$lastColumn, `"APE`")/2"
-
+    SetFormulaHeaders $startRow $lastColumn
+ 
     
     # Create the drop-down list for the main data column
     for ($i = $startRow + 2; $i -le $startRow + 9; $i++) {
@@ -91,20 +164,33 @@ for ($month = 1; $month -le 12; $month++) {
             $validation.IgnoreBlank = $true
             $validation.InCellDropdown = $true
         }
+        # Set the excel formulas after the headers are set hence the $startRow+2 
+        SetExcelFormulas $i $lastColumn
     }
 }
 
-
-# Add conditional formatting
-$range = $worksheet.Range("B$($startRow + 2):$lastColumn$($startRow + 9)")
-$formatConditions = $range.FormatConditions
-$conditionPTH = $formatConditions.Add(1, 3, "=`"PTH`"") # 1 = xlCellValue, 3 = xlEqual
-$conditionPTH.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Turquoise)
-$conditionPTO = $formatConditions.Add(1, 3, "=`"PTO`"") # 1 = xlCellValue, 3 = xlEqual
-$conditionPTO.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Orange)
-
-
 # Save the workbook
+# Apply conditional formatting for "OS" cells
+$range = $worksheet.UsedRange
+$formatConditionOS = $range.FormatConditions.Add(1, 3, "OS")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkOrange)
+$formatConditionOS.Font.Bold = $true
+
+$formatConditionPTO = $range.FormatConditions.Add(1, 3, "PTO")  # xlCellValue = 1, xlEqual = 1
+$formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Orange)
+$formatConditionPTO.Font.Bold = $true
+
+$formatConditionPTH = $range.FormatConditions.Add(1, 3, "PTH")  # xlCellValue = 1, xlEqual = 1
+$formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Silver)
+$formatConditionPTH.Font.Bold = $true
+
+$formatConditionOB = $range.FormatConditions.Add(1, 3, "OB")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOB.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Purple)
+$formatConditionOB.Font.Bold = $true
+
+$formatConditionOS = $range.FormatConditions.Add(1, 3, "APE")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
+$formatConditionOS.Font.Bold = $true
 
 $workbook.SaveAs($filePath)
 $workbook.Close()
@@ -114,3 +200,5 @@ $excel.Quit()
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($worksheet) | Out-Null
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($workbook) | Out-Null
 [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+
+Write-Host "`nJob complete! Thank you!`n" -ForegroundColor Green
