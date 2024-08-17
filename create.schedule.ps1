@@ -42,7 +42,7 @@ $worksheet = $workbook.Worksheets.Item(1)
 
 # Define the headers
 $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
-$values = "APE,OS,PTO,PTH,OB,H"
+$values = "APE,H,OB,OS,PTO,PTH"
 $columnMapping = @{
     30 = "AD"
     31 = "AE"
@@ -85,7 +85,7 @@ function SetFormulaHeaders ($startRow, $lastCol) {
     $worksheet.Cells.Item($startRow, $holidayColumnValue).Font.Bold = $true
     $worksheet.Cells.Item($startRow, $holidayColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)  # Set font color
     # Set the formula for holidays
-    $worksheet.Cells.Item($nextRow, $holidayColumnValue).Formula = "=COUNTIF(B$($startRow + 3):AF$($startRow+3), `"H`")"
+    $worksheet.Cells.Item($nextRow, $holidayColumnValue).Formula = "=COUNTIF(B$($startRow + 2):AF$($startRow+3), `"H`")"
     $worksheet.Cells.Item($startRow, $workingDaysColumnValue) = "Working Days"
     $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Font.Bold = $true
     $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)  # Set background color
@@ -101,12 +101,13 @@ function SetFormulaHeaders ($startRow, $lastCol) {
     $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Bold = $true
     $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
 }
-function SetExcelFormulas ($startRow, $lastCol) {
-    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"OS`")"
-    $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"PTO`")"
-    $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"PTH`")/2"
-    $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"OB`")"
-    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow + 3):$lastCol, `"APE`")/2"
+function SetExcelFormulas ($startRow, $lastColumnHeading) {
+    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"OS`")"
+    $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTO`")"
+    $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTH`")/2"
+    $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"OB`")"
+    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
+    $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "SUM(AJ$($startRow):AN$($startRow))/AI$($startRow-1)"
 }
 
 # Get the current directory
@@ -174,8 +175,8 @@ for ($month = 1; $month -le 12; $month++) {
             $cell.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)
         }
         }
-        # Set the excel formulas after the headers are set hence the $startRow+2 
-        SetExcelFormulas $i $lastColumn
+        # Set the excel formulas after the headers are set and this is 3 rows from the start row hence the $i + 3
+        SetExcelFormulas $i+3 $columnMapping[$lastColumn]
     }
 }
 
