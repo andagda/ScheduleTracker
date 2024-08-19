@@ -67,6 +67,9 @@ $columnMapping = @{
     39 = "AM"
     40 = "AN"
     41 = "AO"
+    42 = "AP"
+    43 = "AQ"
+    44 = "AR"
 }
 
 # Create a reverse mapping hashtable to map string values to integer representations
@@ -77,13 +80,34 @@ foreach ($key in $columnMapping.Keys) {
 $weekdayColumnValue=$reverseColumnMapping["AG"]
 $holidayColumnValue=$reverseColumnMapping["AH"]
 $workingDaysColumnValue=$reverseColumnMapping["AI"]
-$OSColumnValue = $reverseColumnMapping["AJ"]
-$PTOColumnValue = $reverseColumnMapping["AK"]
-$PTHColumnValue = $reverseColumnMapping["AL"]
-$OBColumnValue = $reverseColumnMapping["AM"]
-$APEColumnValue = $reverseColumnMapping["AN"]
-$percentColumnValue = $reverseColumnMapping["AO"]
+$APEColumnValue = $reverseColumnMapping["AJ"]
+$OBColumnValue = $reverseColumnMapping["AK"]
+$OSColumnValue = $reverseColumnMapping["AL"]
+$PTHColumnValue = $reverseColumnMapping["AM"]
+$PTOColumnValue = $reverseColumnMapping["AN"]
+$WFAColumnValue = $reverseColumnMapping["AO"]
+$percentColumnValue = $reverseColumnMapping["AP"]
+$legendColumnValue = $reverseColumnMapping["AQ"]
+$legendTextColunmValue = $reverseColumnMapping["AR"]
 
+$worksheet.Cells.Item(1, 1) = "APE"
+$worksheet.Cells.Item(2, 1) = "H"
+$worksheet.Cells.Item(3, 1) = "OB"
+$worksheet.Cells.Item(4, 1) = "OS"
+$worksheet.Cells.Item(1, 11) = "PTH"
+$worksheet.Cells.Item(2, 11) = "PTO"
+$worksheet.Cells.Item(3, 11) = "WFA"
+$worksheet.Cells.Item(1, 2) = "Annual Physical Exam (0.5 Days by Default)"
+$worksheet.Cells.Item(2, 2) = "Holiday"
+$worksheet.Cells.Item(3, 2) = "Official Business (Business Trips, Client Visit, Conventions)"
+$worksheet.Cells.Item(4, 2) = "Onsite"
+$worksheet.Cells.Item(1, 12) = "Paid Time Off  - Half Day"
+$worksheet.Cells.Item(2, 12) = "Paid Time Off (VL, SL, Maternity, Breavement)"
+$worksheet.Cells.Item(3, 12) = "Work From Anywyare (PH Domestic Workcation, International Workcation)"
+
+# Make column widths appropriate to the header text 
+$worksheet.Columns.Item($reverseColumnMapping["AG"]).ColumnWidth = 8.9
+$worksheet.Columns.Item($reverseColumnMapping["AI"]).ColumnWidth = 11.4
 function SetFormulaHeaders ($startRow, $lastColumnHeading) {
     $nextRow = $startRow + 1
     $startRowPlus2 = $startRow + 2
@@ -103,15 +127,16 @@ function SetFormulaHeaders ($startRow, $lastColumnHeading) {
     $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)  # Set background color
     # Set the formula for working days
     $worksheet.Cells.Item($nextRow, $workingDaysColumnValue).Formula = "=AG$nextRow - AH$nextRow"
+     $worksheet.Cells.Item($nextRow, $APEColumnValue) = "APE"
+     $worksheet.Cells.Item($nextRow, $OBColumnValue) = "OB"
     $worksheet.Cells.Item($nextRow, $OSColumnValue) = "OS"
-    $worksheet.Cells.Item($nextRow, $PTOColumnValue) = "PTO"
     $worksheet.Cells.Item($nextRow, $PTHColumnValue) = "PTH"
-    $worksheet.Cells.Item($nextRow, $OBColumnValue) = "OB"
-    $worksheet.Cells.Item($nextRow, $APEColumnValue) = "APE"
+    $worksheet.Cells.Item($nextRow, $PTOColumnValue) = "PTO"
+    $worksheet.Cells.Item($nextRow, $WFAColumnValue) = "WFA"
     $worksheet.Cells.Item($nextRow, $percentColumnValue) = "%"
-    $worksheet.Cells.Item($startRow, $percentColumnValue).HorizontalAlignment = -4108  # Center alignment 
-    $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Bold = $true
-    $worksheet.Cells.Item($startRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
+    $worksheet.Cells.Item($nextRow, $percentColumnValue).HorizontalAlignment = -4108  # Center alignment 
+    $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Bold = $true
+    $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
 }
 function SetExcelFormulas ($startRow, $lastColumnHeading, $workingDaysRow) {
     $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$startRow, `"OS`")"
@@ -141,7 +166,7 @@ for ($month = 1; $month -le 12; $month++) {
     Write-Host "Generating Table for $monthName" -ForegroundColor Cyan
     
     # Calculate the starting row for each month's table
-    $startRow = ($month - 1) * ($teamsize + 2) + 1
+    $startRow = ($month - 1) * ($teamsize + 2) + 5
 
     # Merge cells for the month name header
     $worksheet.Cells.Item($startRow, 1).Value = $monthName
@@ -198,41 +223,47 @@ for ($month = 1; $month -le 12; $month++) {
 # Save the workbook
 # Apply conditional formatting for "OS" cells
 $range = $worksheet.UsedRange
-$formatConditionOS = $range.FormatConditions.Add(1, 3, "OS")  # xlCellValue = 1, xlEqual = 1
-$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkOrange)
-$formatConditionOS.Font.Bold = $true
-
-$formatConditionPTO = $range.FormatConditions.Add(1, 3, "PTO")  # xlCellValue = 1, xlEqual = 1
-$formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightBlue)
-$formatConditionPTO.Font.Bold = $true
-
-$formatConditionPTH = $range.FormatConditions.Add(1, 3, "PTH")  # xlCellValue = 1, xlEqual = 1
-$formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Silver)
-$formatConditionPTH.Font.Bold = $true
-
-$formatConditionOB = $range.FormatConditions.Add(1, 3, "OB")  # xlCellValue = 1, xlEqual = 1
-$formatConditionOB.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Purple)
-$formatConditionOB.Font.Bold = $true
-
 $formatConditionOS = $range.FormatConditions.Add(1, 3, "APE")  # xlCellValue = 1, xlEqual = 1
 $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
 $formatConditionOS.Font.Bold = $true
-
 $formatConditionH = $range.FormatConditions.Add(1, 3, "H")  # xlCellValue = 1, xlEqual = 1
 $formatConditionH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)
 $formatConditionH.Font.Bold = $true
+$formatConditionPTH = $range.FormatConditions.Add(1, 3, "PTH")  # xlCellValue = 1, xlEqual = 1
+$formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Silver)
+$formatConditionPTH.Font.Bold = $true
+$formatConditionPTO = $range.FormatConditions.Add(1, 3, "PTO")  # xlCellValue = 1, xlEqual = 1
+$formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightBlue)
+$formatConditionPTO.Font.Bold = $true
+$formatConditionOB = $range.FormatConditions.Add(1, 3, "OB")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOB.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Purple)
+$formatConditionOB.Font.Bold = $true
+$formatConditionOS = $range.FormatConditions.Add(1, 3, "OS")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkOrange)
+$formatConditionOS.Font.Bold = $true
+$formatConditionOS = $range.FormatConditions.Add(1, 3, "WFA")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Blue)
+$formatConditionOS.Font.Bold = $true
+$formatConditionOS = $range.FormatConditions.Add(1, 3, "%")  # xlCellValue = 1, xlEqual = 1
+$formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)
+$formatConditionOS.Font.Bold = $true
 
-$rangePercent = $worksheet.range("AO2:AO$($worksheet.UsedRange.Rows.Count)") # Set range of percentage column starting from AO3
-    $rangePercent.NumberFormat = "0.0%"  # Set to % with 1 decimal place
-        
-    # Add conditional formatting for cells with values greater than or equal to 0.5
-    $formatConditionGreaterEqual50 = $rangePercent.FormatConditions.Add(1, 7, "0.5")  # xlCellValue = 1, xlGreaterEqual = 3
-    $formatConditionGreaterEqual50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)
+$rangePercent = $worksheet.range("AP2:AP$($worksheet.UsedRange.Rows.Count)") # Set range of percentage column starting from AO3
+$rangePercent.NumberFormat = "0.0%"  # Set to % with 1 decimal place        
+# Add conditional formatting for cells with values greater than or equal to 0.5
+$formatConditionGreaterEqual50 = $rangePercent.FormatConditions.Add(1, 7, "0.5")  # xlCellValue = 1, xlGreaterEqual = 3
+$formatConditionGreaterEqual50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)
 
-        # Add conditional formatting for cells with values less than 0.5
-        $formatConditionLessThan50 = $rangePercent.FormatConditions.Add(1, 6, "0.5")  # xlCellValue = 1, xlLess = 2
-        $formatConditionLessThan50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightPink)
+# Add conditional formatting for cells with values less than 0.5
+$formatConditionLessThan50 = $rangePercent.FormatConditions.Add(1, 6, "0.5")  # xlCellValue = 1, xlLess = 2
+$formatConditionLessThan50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightPink)
     
+
+# Freeze pane at row 5, column 13 (M)
+$worksheet.Application.ActiveWindow.SplitColumn = 22
+$worksheet.Application.ActiveWindow.SplitRow = 5
+$worksheet.Application.ActiveWindow.FreezePanes = $true
+
 $workbook.SaveAs($filePath)
 $workbook.Close()
 $excel.Quit()
