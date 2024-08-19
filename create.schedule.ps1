@@ -50,9 +50,9 @@ $excel.Visible = $true
 $workbook = $excel.Workbooks.Add()
 $worksheet = $workbook.Worksheets.Item(1)
 
-# Define the headers
+# Define the different global variables
 $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
-$values = "APE,H,OB,OS,PTO,PTH"
+$values = "APE,H,OB,OS,PTO,PTH,WFA"
 $columnMapping = @{
     29 = "AC"
     30 = "AD"
@@ -68,10 +68,7 @@ $columnMapping = @{
     40 = "AN"
     41 = "AO"
     42 = "AP"
-    43 = "AQ"
-    44 = "AR"
 }
-
 # Create a reverse mapping hashtable to map string values to integer representations
 $reverseColumnMapping = @{}
 foreach ($key in $columnMapping.Keys) {
@@ -87,23 +84,23 @@ $PTHColumnValue = $reverseColumnMapping["AM"]
 $PTOColumnValue = $reverseColumnMapping["AN"]
 $WFAColumnValue = $reverseColumnMapping["AO"]
 $percentColumnValue = $reverseColumnMapping["AP"]
-$legendColumnValue = $reverseColumnMapping["AQ"]
-$legendTextColunmValue = $reverseColumnMapping["AR"]
-
+# Create an array to store the Row value of Names in the January Table
+$arrayJanuaryNamesRows = @()
+# Displays the Legend at the top of the sheet
 $worksheet.Cells.Item(1, 1) = "APE"
 $worksheet.Cells.Item(2, 1) = "H"
-$worksheet.Cells.Item(3, 1) = "OB"
-$worksheet.Cells.Item(4, 1) = "OS"
+$worksheet.Cells.Item(3, 1) = "OS"
+$worksheet.Cells.Item(4, 1) = "OB"
 $worksheet.Cells.Item(1, 11) = "PTH"
 $worksheet.Cells.Item(2, 11) = "PTO"
 $worksheet.Cells.Item(3, 11) = "WFA"
 $worksheet.Cells.Item(1, 2) = "Annual Physical Exam (0.5 Days by Default)"
 $worksheet.Cells.Item(2, 2) = "Holiday"
-$worksheet.Cells.Item(3, 2) = "Official Business (Business Trips, Client Visit, Conventions)"
-$worksheet.Cells.Item(4, 2) = "Onsite"
+$worksheet.Cells.Item(3, 2) = "Onsite"
+$worksheet.Cells.Item(4, 2) = "Official Business (Business Trips, Client Visit, Conventions, Quarantine on OS Day)"
 $worksheet.Cells.Item(1, 12) = "Paid Time Off  - Half Day"
 $worksheet.Cells.Item(2, 12) = "Paid Time Off (VL, SL, Maternity, Breavement)"
-$worksheet.Cells.Item(3, 12) = "Work From Anywyare (PH Domestic Workcation, International Workcation)"
+$worksheet.Cells.Item(3, 12) = "Work From Anywyare (PH Domestic/International Workcation)"
 
 # Make column widths appropriate to the header text 
 $worksheet.Columns.Item($reverseColumnMapping["AG"]).ColumnWidth = 8.9
@@ -139,20 +136,37 @@ function SetFormulaHeaders ($startRow, $lastColumnHeading) {
     $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
 }
 function SetExcelFormulas ($startRow, $lastColumnHeading, $workingDaysRow) {
-    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$startRow, `"OS`")"
+    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
+    $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"OB`")"
+    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$startRow, `"OS`")"    
     $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTO`")"
     $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTH`")/2"
-    $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"OB`")"
-    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
-    $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "=SUM(AJ$($startRow):AN$($startRow))/AI`$$($workingDaysRow)"
-    $rangePercent = $worksheet.range("AO$($startRow)") # Set range of percentage column
+    $worksheet.Cells.Item($startRow, $WFAColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"WFA`")"
+    $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "=SUM(AJ$($startRow):AO$($startRow))/AI`$$($workingDaysRow)"
+    $rangePercent = $worksheet.range("AP$($startRow)") # Set range of percentage column
     $rangePercent.NumberFormat = "0.0%"  # Set to % with 1 decimal place
 }   
+
+function SetBorders ($cellSetBorders) {
+    # Set the border style for each cell
+    $cellSetBorders.Borders.Item(9).LineStyle = 1 # xlEdgeBottom
+    $cellSetBorders.Borders.Item(9).Weight = 2 # xlThin
+
+    $cellSetBorders.Borders.Item(8).LineStyle = 1 # xlEdgeTop
+    $cellSetBorders.Borders.Item(8).Weight = 2 # xlThin
+
+    $cellSetBorders.Borders.Item(7).LineStyle = 1 # xlEdgeLeft
+    $cellSetBorders.Borders.Item(7).Weight = 2 # xlThin
+
+    $cellSetBorders.Borders.Item(10).LineStyle = 1 # xlEdgeRight
+    $cellSetBorders.Borders.Item(10).Weight = 2 # xlThin
+} 
 
 # Get the current directory
 $currentDirectory = Get-Location
 $filePath= "$currentDirectory\ScheduleTracker_$year.xlsx"
 
+# Delete existing file if it exists
 if (Test-Path $filePath) {
     Remove-Item -Path $filePath
 }
@@ -200,6 +214,7 @@ for ($month = 1; $month -le 12; $month++) {
     SetFormulaHeaders $startRow $columnMapping[$lastColumn]
     $workingDaysRow= $startRow + 1
     
+    $indexJanuaryNames = 0
     # Create the drop-down list for the main data column
     for ($i = $startRow + 2; $i -le $startRow + $teamsize + 1; $i++) {
         for ($j = 2; $j -le $daysInMonth + 1; $j++) {
@@ -210,19 +225,42 @@ for ($month = 1; $month -le 12; $month++) {
             $validation.IgnoreBlank = $true
             $validation.InCellDropdown = $true
 
+            SetBorders $cell
+
             # Check if the column index is in the $weekendColumns array
-        if ($weekendColumns -contains $j) {
-            $cell.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)
+            if ($weekendColumns -contains $j) {
+                $cell.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)
+            }
         }
+        if ($month -eq 1) {
+            $arrayJanuaryNamesRows += $i
+        }
+        else {
+            $worksheet.Cells.Item($i, 1) = "=A$($arrayJanuaryNamesRows[$indexJanuaryNames])"
+            $indexJanuaryNames++ 
         }
         # Set the excel formulas after the headers are set and this is 3 rows from the start row hence the $i + 3
         SetExcelFormulas $i $columnMapping[$lastColumn] $workingDaysRow
     }
 }
 
-# Save the workbook
-# Apply conditional formatting for "OS" cells
+# Creats TOTAL table for MFA for each team member
 $range = $worksheet.UsedRange
+$currentLastRow = $range.Rows.Count
+$lastRowInDecember = $currentLastRow
+    $currentLastRow++
+    $worksheet.Cells.Item($currentLastRow, 1).Value = "TOTAL"
+    $currentLastRow++
+    $worksheet.Cells.Item($currentLastRow, 1).Value = "WFA"
+for ($i = 0; $i -lt $teamsize ; $i++) {
+    $currentLastRow++
+    $worksheet.Cells.Item($currentLastRow, 1).Value = "=A$($arrayJanuaryNamesRows[$i])"
+    $worksheet.Cells.Item($currentLastRow, 2).Value = "=SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AF$($lastRowInDecember)=`"WFA`"))"
+}
+
+# Apply conditional formatting depending on cells values
+$range = $worksheet.UsedRange
+
 $formatConditionOS = $range.FormatConditions.Add(1, 3, "APE")  # xlCellValue = 1, xlEqual = 1
 $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
 $formatConditionOS.Font.Bold = $true
@@ -247,23 +285,24 @@ $formatConditionOS.Font.Bold = $true
 $formatConditionOS = $range.FormatConditions.Add(1, 3, "%")  # xlCellValue = 1, xlEqual = 1
 $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)
 $formatConditionOS.Font.Bold = $true
-
 $rangePercent = $worksheet.range("AP2:AP$($worksheet.UsedRange.Rows.Count)") # Set range of percentage column starting from AO3
 $rangePercent.NumberFormat = "0.0%"  # Set to % with 1 decimal place        
 # Add conditional formatting for cells with values greater than or equal to 0.5
 $formatConditionGreaterEqual50 = $rangePercent.FormatConditions.Add(1, 7, "0.5")  # xlCellValue = 1, xlGreaterEqual = 3
 $formatConditionGreaterEqual50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)
-
 # Add conditional formatting for cells with values less than 0.5
 $formatConditionLessThan50 = $rangePercent.FormatConditions.Add(1, 6, "0.5")  # xlCellValue = 1, xlLess = 2
 $formatConditionLessThan50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightPink)
-    
+$formatConditionTOTAL = $range.FormatConditions.Add(1, 3, "TOTAL")  # xlCellValue = 1, xlEqual = 1
+$formatConditionTOTAL.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::BlueViolet)
+$formatConditionTOTAL.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::YellowGreen)
+$formatConditionTOTAL.Font.Bold = $true    
 
 # Freeze pane at row 5, column 13 (M)
-$worksheet.Application.ActiveWindow.SplitColumn = 22
+$worksheet.Application.ActiveWindow.SplitColumn = 21
 $worksheet.Application.ActiveWindow.SplitRow = 5
 $worksheet.Application.ActiveWindow.FreezePanes = $true
-
+# Save the workbook
 $workbook.SaveAs($filePath)
 $workbook.Close()
 $excel.Quit()
