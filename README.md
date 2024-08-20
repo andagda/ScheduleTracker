@@ -1,7 +1,7 @@
 ## create.schedule.ps1 tool to Create a New Schedule Tracker Sheet
 
 
-1. Install powershell 7 by running this command in an Admin Command Prompt or Powershell Promopt to use Excel functions.  
+1. Install latest powershell 7 by running this command in an Admin Command Prompt or Powershell Prompt to use Excel functions.  
 `winget install --id Microsoft.PowerShell --source winget`
 1. Clone this repo *git should installed on your machine [Installing Git](https://git-scm.com/download/win)*  
 `git clone https://github.com/andagda/ScheduleTracker.git`
