@@ -3,6 +3,8 @@
 
 1. Install powershell 7 by running this command in an Admin Command Prompt or Powershell Promopt to use Excel functions.  
 `winget install --id Microsoft.PowerShell --source winget`
+1. Clone this repo *git should installed on your machine [Installing Git](https://git-scm.com/download/win)*  
+`git clone https://github.com/andagda/ScheduleTracker.git`
 1. Run the script from a powershell command line 
  `.\create.schedule.ps1 -?`
  or 
