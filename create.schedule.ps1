@@ -97,7 +97,7 @@ $worksheet.Cells.Item(3, 11) = "WFA"
 $worksheet.Cells.Item(1, 2) = "Annual Physical Exam (0.5 Days by Default)"
 $worksheet.Cells.Item(2, 2) = "Holiday"
 $worksheet.Cells.Item(3, 2) = "Onsite"
-$worksheet.Cells.Item(4, 2) = "Official Business (Business Trips, Client Visit, Conventions, Quarantine on OS Day)"
+$worksheet.Cells.Item(4, 2) = "Official Business (Business Trips, Client Visit, Conventions, Quarantine on OS Day, OS Day Canclled due to weather)"
 $worksheet.Cells.Item(1, 12) = "Paid Time Off  - Half Day"
 $worksheet.Cells.Item(2, 12) = "Paid Time Off (VL, SL, Maternity, Breavement)"
 $worksheet.Cells.Item(3, 12) = "Work From Anywyare (PH Domestic/International Workcation)"
@@ -300,7 +300,7 @@ $formatConditionTOTAL.Font.Bold = $true
 
 # Freeze pane at row 5, column 13 (M)
 $worksheet.Application.ActiveWindow.SplitColumn = 21
-$worksheet.Application.ActiveWindow.SplitRow = 5
+$worksheet.Application.ActiveWindow.SplitRow = 4
 $worksheet.Application.ActiveWindow.FreezePanes = $true
 # Save the workbook
 $workbook.SaveAs($filePath)
