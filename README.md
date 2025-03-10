@@ -16,7 +16,11 @@ Then run this command `Set-ExecutionPolicy Unrestricted`
 
 1. To get all the Details from the help file use `Get-Help .\create.schedule.ps1 -Detailed` 
 1. To get the Examples from the help file details use `Get-Help .\create.schedule.ps1 -Examples`
-1. Here is what should be displayed on your powershell CLI when running the script with these parameters `.\create.schedule.ps1 -teamsize 4 -year 2026`.  
+1. Here is what should be displayed on your powershell CLI when running the script 
+`.\create.schedule.ps1`.
+    * User will be prompted to enter the year and team size.<br>
+    ![image.jpg](help.images/uiscreenshot1.png)<br>
+    ![image.jpg](help.images/uiscreenshot2.png)<br>
 ![image.jpg](help.images/CLIscreenshot.jpg)
 1. An Excel File with **ScheduleTracker_YYYY.xlsx** will be generated in the root folder  
 ![image.jpg](help.images/ExcelFileSample.jpg)
