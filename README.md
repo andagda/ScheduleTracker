@@ -19,8 +19,8 @@ Then run this command `Set-ExecutionPolicy Unrestricted`
 1. Here is what should be displayed on your powershell CLI when running the script 
 `.\create.schedule.ps1`.
     * User will be prompted to enter the year and team size.<br>
-    ![image.jpg](help.images/uiscreenshot1.png)<br>
-    ![image.jpg](help.images/uiscreenshot2.png)<br>
+    ![image.jpg](help.images/UIScreenshot1.png)<br>
+    ![image.jpg](help.images/UIScreenshot2.png)<br>
 ![image.jpg](help.images/CLIscreenshot.jpg)
 1. An Excel File with **ScheduleTracker_YYYY.xlsx** will be generated in the root folder  
 ![image.jpg](help.images/ExcelFileSample.jpg)
