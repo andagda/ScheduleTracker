@@ -102,25 +102,25 @@ function SetFormulaHeaders ($startRow, $lastColumnHeading) {
     $worksheet.Cells.Item($startRow, $workingDaysColumnValue).Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGreen)  # Set background color
     # Set the formula for working days
     $worksheet.Cells.Item($nextRow, $workingDaysColumnValue).Formula = "=AG$nextRow - AH$nextRow"
-    $worksheet.Cells.Item($nextRow, $APEColumnValue) = "APE"
+    $worksheet.Cells.Item($nextRow, $APEColumnValue) = "WFA"
     $worksheet.Cells.Item($nextRow, $OBColumnValue) = "OB"
     $worksheet.Cells.Item($nextRow, $OSColumnValue) = "OS"
     $worksheet.Cells.Item($nextRow, $PTHColumnValue) = "PTH"
     $worksheet.Cells.Item($nextRow, $PTOColumnValue) = "PTO"
-    $worksheet.Cells.Item($nextRow, $WFAColumnValue) = "WFA"
+    $worksheet.Cells.Item($nextRow, $WFAColumnValue) = "APE"
     $worksheet.Cells.Item($nextRow, $percentColumnValue) = "%"
     $worksheet.Cells.Item($nextRow, $percentColumnValue).HorizontalAlignment = -4108  # Center alignment 
     $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Bold = $true
     $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)  # Set font color
 }
 function SetExcelFormulas ($startRow, $lastColumnHeading, $workingDaysRow) {
-    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
+    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"WFA`")"
     $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"OB`")"
     $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$startRow, `"OS`")"    
     $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTO`")"
     $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"PTH`")/2"
-    $worksheet.Cells.Item($startRow, $WFAColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"WFA`")"
-    $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "=SUM(AJ$($startRow):AO$($startRow))/AI`$$($workingDaysRow)"
+    $worksheet.Cells.Item($startRow, $WFAColumnValue).Formula = "=COUNTIF(B$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
+    $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "=SUM(AJ$($startRow):AL$($startRow))/(AI`$$($workingDaysRow) - SUM(AM$($startRow):AO$($startRow)))"
     $rangePercent = $worksheet.range("AP$($startRow)") # Set range of percentage column
     $rangePercent.NumberFormat = "0.0%"  # Set to % with 1 decimal place
 }   
@@ -162,7 +162,7 @@ if ($year -and $teamSize) {
 
     # Define the different global variables
     $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
-    $values = "APE,H,OB,OS,PTO,PTH,WFA"
+    $values = "WFA,H,OB,OS,PTO,PTH,APE"
     $columnMapping = @{
         29 = "AC"
         30 = "AD"
