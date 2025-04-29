@@ -5,18 +5,20 @@
 `winget install --id Microsoft.PowerShell --source winget`
 1. Clone this repo *git should installed on your machine [Installing Git](https://git-scm.com/download/win)*  
 `git clone https://github.com/andagda/ScheduleTracker.git`
+1. Run this script from Windows File Explorer
+Open windows file explorer and right click on the create.schedule.ps1 file
+ ![image.png](help.images/RunFromFileExplorer.png)
 1. Run the script from a powershell command line 
- `.\create.schedule.ps1 -?`
+ `.\create.schedule.ps1`
  or 
- `./create.schedule.ps1 -?` to know how to use the script.  
+ `./create.schedule.ps1`  
 If you get an error like this  
 ![image.png](help.images/PowerShellExecutiionPolicyError.png)  
 Run this command `Get-ExecutionPolicy` to check your Execution Policy.  
 Then run this command `Set-ExecutionPolicy Unrestricted`
-
-1. To get all the Details from the help file use `Get-Help .\create.schedule.ps1 -Detailed` 
-1. To get the Examples from the help file details use `Get-Help .\create.schedule.ps1 -Examples`
-1. Here is what should be displayed on your powershell CLI when running the script 
+    - To get all the Details from the help file use `Get-Help .\create.schedule.ps1 -Detailed` 
+    - To get the Examples from the help file details use `Get-Help .\create.schedule.ps1 -Examples`
+1. Here is what should be displayed when running the script thur file explorer or command line interface (CLI)
 `.\create.schedule.ps1`.
     * User will be prompted to enter the year and team size.<br>
     ![image.jpg](help.images/UIScreenshot1.png)<br>
