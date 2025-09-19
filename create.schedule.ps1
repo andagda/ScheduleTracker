@@ -96,22 +96,20 @@ function SetFormulaHeaders ($startRow, $lastColumnHeading) {
     $worksheet.Cells.Item($nextRow, $workingDaysColumnValue).Formula = "=AI$nextRow - AJ$nextRow"
     $worksheet.Cells.Item($nextRow, $WFAColumnValue) = "WFA"
     $worksheet.Cells.Item($nextRow, $OBColumnValue) = "OB"
-    $worksheet.Cells.Item($nextRow, $OSColumnValue) = "OS"
+    $worksheet.Cells.Item($nextRow, $WFOColumnValue) = "WFO"
     $worksheet.Cells.Item($nextRow, $PTHColumnValue) = "PTH"
     $worksheet.Cells.Item($nextRow, $PTOColumnValue) = "PTO"
-    $worksheet.Cells.Item($nextRow, $APEColumnValue) = "APE"
     $worksheet.Cells.Item($nextRow, $percentColumnValue) = "%"
     $worksheet.Cells.Item($nextRow, $percentColumnValue).HorizontalAlignment = -4108  # Center alignment 
     $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Bold = $true
     $worksheet.Cells.Item($nextRow, $percentColumnValue).Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::White)  # Set font color
 }
 function SetExcelFormulas ($startRow, $lastColumnHeading, $workingDaysRow) {
-    $worksheet.Cells.Item($startRow, $WFAColumnValue).Formula = "=`COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFA`")"
+    $worksheet.Cells.Item($startRow, $WFAColumnValue).Formula = "=`COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFA`") + (COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFA-H`")/2)"
     $worksheet.Cells.Item($startRow, $OBColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"OB`")"
-    $worksheet.Cells.Item($startRow, $OSColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$startRow, `"OS`")"    
+    $worksheet.Cells.Item($startRow, $WFOColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$startRow, `"WFO`") + (COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFO-H`")/2)"    
     $worksheet.Cells.Item($startRow, $PTOColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"PTO`")"
-    $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"PTH`")/2"
-    $worksheet.Cells.Item($startRow, $APEColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"APE`")/2"
+    $worksheet.Cells.Item($startRow, $PTHColumnValue).Formula = "=COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"PTH`")/2 + (COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFA-H`")/2) + (COUNTIF(D$($startRow):$lastColumnHeading$($startRow), `"WFO-H`")/2)"
     $worksheet.Cells.Item($startRow, $workingDaysPerEmployeeColumnValue).Formula = "=AK`$$($workingDaysRow) - SUM(AO$($startRow):AQ$($startRow))"
     $worksheet.Cells.Item($startRow, $percentColumnValue).Formula = "=SUM(AL$($startRow):AN$($startRow))/(B$($startRow))"
     $rangePercent = $worksheet.range("C$($startRow)") # Set range of percentage column
@@ -162,7 +160,7 @@ if ($year -and $teamSize) {
 
     # Define the different global variables
     $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
-    $values = "WFA,H,OB,OS,PTO,PTH,APE"
+    $values = "WFA,WFA-H,H,OB,WFO,WFO-H,PTO,PTH"
     $columnMapping = @{
         2 = "B"
         3 = "C"
@@ -194,28 +192,29 @@ if ($year -and $teamSize) {
     $workingDaysColumnValue = $reverseColumnMapping["AK"]
     $WFAColumnValue = $reverseColumnMapping["AL"]
     $OBColumnValue = $reverseColumnMapping["AM"]
-    $OSColumnValue = $reverseColumnMapping["AN"]
+    $WFOColumnValue = $reverseColumnMapping["AN"]
     $PTHColumnValue = $reverseColumnMapping["AO"]
-    $PTOColumnValue = $reverseColumnMapping["AP"]
-    $APEColumnValue = $reverseColumnMapping["AQ"]   
+    $PTOColumnValue = $reverseColumnMapping["AP"] 
     
     # Create an array to store the Row value of Names in the January Table
     $arrayJanuaryNamesRows = @()
     # Displays the Legend at the top of the sheet
-    $worksheet.Cells.Item(1, 1) = "APE"
-    $worksheet.Cells.Item(2, 1) = "H"
-    $worksheet.Cells.Item(3, 1) = "OS"
+    $worksheet.Cells.Item(1, 1) = "H"
+    $worksheet.Cells.Item(2, 1) = "WFO"
+    $worksheet.Cells.Item(3, 1) = "WFA"
     $worksheet.Cells.Item(4, 1) = "OB"
-    $worksheet.Cells.Item(1, 11) = "PTH"
-    $worksheet.Cells.Item(2, 11) = "PTO"
-    $worksheet.Cells.Item(3, 11) = "WFA"
-    $worksheet.Cells.Item(1, 2) = "Annual Physical Exam (0.5 Days by Default)"
-    $worksheet.Cells.Item(2, 2) = "Holiday"
-    $worksheet.Cells.Item(3, 2) = "Onsite"
-    $worksheet.Cells.Item(4, 2) = "Official Business (Business Trips, Client Visit, Conventions, Quarantine on OS Day, OS Day Cancelled due to weather)"
-    $worksheet.Cells.Item(1, 12) = "Paid Time Off  - Half Day"
-    $worksheet.Cells.Item(2, 12) = "Paid Time Off (VL, SL, Maternity, Bereavement)"
-    $worksheet.Cells.Item(3, 12) = "Work From Anywhere (PH Domestic/International Workcation)"
+    $worksheet.Cells.Item(1, 10) = "PTH"
+    $worksheet.Cells.Item(2, 10) = "PTO"
+    $worksheet.Cells.Item(1, 22) = "WFO-H"
+    $worksheet.Cells.Item(2, 22) = "WFA-H"
+    $worksheet.Cells.Item(1, 2) = "Holiday"
+    $worksheet.Cells.Item(2, 2) = "Work From Office"
+    $worksheet.Cells.Item(4, 2) = "Official Business (Business Trips, Client Visit, Conventions, Quarantine on WFO Day, WFO Day Cancelled due to weather)"
+    $worksheet.Cells.Item(1, 11) = "Paid Time Off  - Half Day (APE, VL, SL, Maternity, Bereavement)"
+    $worksheet.Cells.Item(2, 11) = "Paid Time Off (APE, VL, SL, Maternity, Bereavement)"
+    $worksheet.Cells.Item(3, 2) = "Work From Anywhere (PH Domestic/International Workcation)"
+    $worksheet.Cells.Item(1, 23) = "Work from Office with Half Day PTO"
+    $worksheet.Cells.Item(2, 23) = "Work from Anywhere with Half Day PTO"
 
     # Make column widths appropriate to the header text 
     $worksheet.Columns.Item($reverseColumnMapping["AI"]).ColumnWidth = 8.9
@@ -329,28 +328,30 @@ if ($year -and $teamSize) {
     # Apply conditional formatting depending on cells values
     $range = $worksheet.UsedRange
 
-    $formatConditionOS = $range.FormatConditions.Add(1, 3, "APE")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
-    $formatConditionOS.Font.Bold = $true
     $formatConditionH = $range.FormatConditions.Add(1, 3, "H")  # xlCellValue = 1, xlEqual = 1
     $formatConditionH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Red)
     $formatConditionH.Font.Bold = $true
     $formatConditionPTH = $range.FormatConditions.Add(1, 3, "PTH")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Silver)
+    $formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)
     $formatConditionPTH.Font.Bold = $true
     $formatConditionPTO = $range.FormatConditions.Add(1, 3, "PTO")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightBlue)
+    $formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::PaleGreen)
     $formatConditionPTO.Font.Bold = $true
     $formatConditionOB = $range.FormatConditions.Add(1, 3, "OB")  # xlCellValue = 1, xlEqual = 1
     $formatConditionOB.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Purple)
     $formatConditionOB.Font.Bold = $true
-    $formatConditionOS = $range.FormatConditions.Add(1, 3, "OS")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkOrange)
-    $formatConditionOS.Font.Bold = $true
-    $formatConditionOS = $range.FormatConditions.Add(1, 3, "WFA")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionOS.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Blue)
-    $formatConditionOS.Font.Bold = $true
-    $formatConditionOS.Font.Bold = $true      
+    $formatConditionWFO = $range.FormatConditions.Add(1, 3, "WFO")  # xlCellValue = 1, xlEqual = 1
+    $formatConditionWFO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkOrange)
+    $formatConditionWFO.Font.Bold = $true
+    $formatConditionWFOH = $range.FormatConditions.Add(1, 3, "WFO-H")  # xlCellValue = 1, xlEqual = 1
+    $formatConditionWFOH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Orange)
+    $formatConditionWFOH.Font.Bold = $true
+    $formatConditionWFA = $range.FormatConditions.Add(1, 3, "WFA")  # xlCellValue = 1, xlEqual = 1
+    $formatConditionWFA.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Blue)
+    $formatConditionWFA.Font.Bold = $true
+    $formatConditionWFAH = $range.FormatConditions.Add(1, 3, "WFA-H")  # xlCellValue = 1, xlEqual = 1
+    $formatConditionWFAH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkBlue)
+    $formatConditionWFAH.Font.Bold = $true     
     $formatConditionTOTAL = $range.FormatConditions.Add(1, 3, "TOTAL")  # xlCellValue = 1, xlEqual = 1
     $formatConditionTOTAL.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::BlueViolet)
     $formatConditionTOTAL.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::YellowGreen)
