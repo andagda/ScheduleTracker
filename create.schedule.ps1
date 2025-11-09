@@ -120,6 +120,11 @@ function SetExcelFormulas ($startRow, $lastColumnHeading, $workingDaysRow) {
     # Add conditional formatting for cells with values less than 0.5
     $formatConditionLessThan50 = $rangePercent.FormatConditions.Add(1, 6, "0.5")  # xlCellValue = 1, xlLess = 2
     $formatConditionLessThan50.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightPink)
+    
+    # Release COM objects
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionLessThan50) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionGreaterEqual50) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($rangePercent) | Out-Null
 }   
 
 function SetBorders ($cellSetBorders) {
@@ -151,12 +156,22 @@ if ($year -and $teamSize) {
     Write-Host "`n`nCreating ScheduleTracker_$year.xlsx for a team of $teamsize.........." -ForegroundColor Blue
 
     # Load the Excel COM object
-    $excel = New-Object -ComObject Excel.Application
-    $excel.Visible = $true
+    $excel = $null
+    $workbook = $null
+    $worksheet = $null
+    $excelProcessId = $null
+    
+    try {
+        $excel = New-Object -ComObject Excel.Application
+        $excel.Visible = $false
+        $excel.DisplayAlerts = $false
+        
+        # Capture the Excel process ID for cleanup verification
+        $excelProcessId = (Get-Process | Where-Object { $_.MainWindowHandle -eq $excel.Hwnd }).Id
 
-    # Add a new workbook
-    $workbook = $excel.Workbooks.Add()
-    $worksheet = $workbook.Worksheets.Item(1)
+        # Add a new workbook
+        $workbook = $excel.Workbooks.Add()
+        $worksheet = $workbook.Worksheets.Item(1)
 
     # Define the different global variables
     $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
@@ -299,6 +314,10 @@ if ($year -and $teamSize) {
                 if ($weekendColumns -contains $j) {
                     $cell.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightGray)
                 }
+                
+                # Release COM objects
+                [System.Runtime.InteropServices.Marshal]::ReleaseComObject($validation) | Out-Null
+                [System.Runtime.InteropServices.Marshal]::ReleaseComObject($cell) | Out-Null
             }
             if ($month -eq 1) {
                 $arrayJanuaryNamesRows += $i
@@ -318,11 +337,13 @@ if ($year -and $teamSize) {
     $currentLastRow++
     $worksheet.Cells.Item($currentLastRow, 1).Value = "TOTAL"
     $currentLastRow++
-    $worksheet.Cells.Item($currentLastRow, 1).Value = "WFA"
+    $worksheet.Cells.Item($currentLastRow, 2).Value = "WFA"
+    $worksheet.Cells.Item($currentLastRow, 3).Value = "PTO"
     for ($i = 0; $i -lt $teamsize ; $i++) {
         $currentLastRow++
         $worksheet.Cells.Item($currentLastRow, 1).Value = "=A$($arrayJanuaryNamesRows[$i])"
-        $worksheet.Cells.Item($currentLastRow, 2).Value = "=SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"WFA`"))"
+        $worksheet.Cells.Item($currentLastRow, 2).Value = "=SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"WFA`")) + SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"WFA-H`"))" # WFA-H is counted as full WFA day
+        $worksheet.Cells.Item($currentLastRow, 3).Value = "=SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"PTO`")) + (SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"PTH`"))/2) + (SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"WFA-H`"))/2) + (SUMPRODUCT((A$($arrayJanuaryNamesRows[0]):A$($lastRowInDecember)=A$($currentLastRow))*(B$($arrayJanuaryNamesRows[0]):AH$($lastRowInDecember)=`"WFO-H`"))/2)"
     }
 
     # Apply conditional formatting depending on cells values
@@ -335,7 +356,8 @@ if ($year -and $teamSize) {
     $formatConditionPTH.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::DarkGreen)
     $formatConditionPTH.Font.Bold = $true
     $formatConditionPTO = $range.FormatConditions.Add(1, 3, "PTO")  # xlCellValue = 1, xlEqual = 1
-    $formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::PaleGreen)
+    $formatConditionPTO.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Green)
+    $formatConditionPTO.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::LightYellow)
     $formatConditionPTO.Font.Bold = $true
     $formatConditionOB = $range.FormatConditions.Add(1, 3, "OB")  # xlCellValue = 1, xlEqual = 1
     $formatConditionOB.Font.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::Purple)
@@ -357,6 +379,18 @@ if ($year -and $teamSize) {
     $formatConditionTOTAL.Interior.Color = [System.Drawing.ColorTranslator]::ToOle([System.Drawing.Color]::YellowGreen)
     $formatConditionTOTAL.Font.Bold = $true    
 
+    # Release format condition COM objects
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionTOTAL) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionWFAH) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionWFA) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionWFOH) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionWFO) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionOB) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionPTO) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionPTH) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($formatConditionH) | Out-Null
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($range) | Out-Null
+
     # Freeze pane at row 5, column 3 (M)
     $worksheet.Application.ActiveWindow.SplitColumn = 3
     $worksheet.Application.ActiveWindow.SplitRow = 4
@@ -366,14 +400,51 @@ if ($year -and $teamSize) {
     $worksheet.Columns.Item(34).ColumnWidth = 5
     # Save the workbook
     $workbook.SaveAs($filePath)
-    $workbook.Close()
-    $excel.Quit()
-
-    # Release the COM object
-    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($worksheet) | Out-Null
-    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($workbook) | Out-Null
-    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
-
-    Write-Host "`nJob complete! Thank you!`n" -ForegroundColor Green
+    
+        Write-Host "`nJob complete! Thank you!`n" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "`nError occurred: $_" -ForegroundColor Red
+    }
+    finally {
+        # Release the COM objects properly
+        if ($workbook) {
+            try { $workbook.Close($false) } catch { }
+            try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($workbook) | Out-Null } catch { }
+            $workbook = $null
+        }
+        if ($worksheet) {
+            try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($worksheet) | Out-Null } catch { }
+            $worksheet = $null
+        }
+        if ($excel) {
+            try { 
+                $excel.DisplayAlerts = $false
+                $excel.Quit() 
+            } catch { }
+            try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null } catch { }
+            $excel = $null
+        }
+        
+        # Force garbage collection multiple times to ensure COM objects are released
+        [System.GC]::Collect()
+        [System.GC]::WaitForPendingFinalizers()
+        [System.GC]::Collect()
+        [System.GC]::WaitForPendingFinalizers()
+        
+        # Force kill the Excel process if it's still running
+        if ($excelProcessId) {
+            Start-Sleep -Milliseconds 500
+            $excelProcess = Get-Process -Id $excelProcessId -ErrorAction SilentlyContinue
+            if ($excelProcess) {
+                try {
+                    $excelProcess | Stop-Process -Force
+                    Write-Host "Forcefully closed remaining Excel process." -ForegroundColor Yellow
+                } catch {
+                    Write-Host "Note: Excel process may still be running. Check Task Manager if needed." -ForegroundColor Yellow
+                }
+            }
+        }
+    }
 }
 
