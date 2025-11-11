@@ -1,0 +1,81 @@
+{
+  "regularHolidays": [
+    {
+      "month": 1,
+      "day": 1,
+      "name": "New Year's Day"
+    },
+    {
+      "month": 4,
+      "day": 9,
+      "name": "Araw ng Kagitingan"
+    },
+    {
+      "month": 5,
+      "day": 1,
+      "name": "Labor Day"
+    },
+    {
+      "month": 6,
+      "day": 12,
+      "name": "Independence Day"
+    },
+    {
+      "month": 8,
+      "day": 21,
+      "name": "Ninoy Aquino Day"
+    },
+    {
+      "month": 11,
+      "day": 1,
+      "name": "All Saints' Day"
+    },
+    {
+      "month": 11,
+      "day": 30,
+      "name": "Bonifacio Day"
+    },
+    {
+      "month": 12,
+      "day": 24,
+      "name": "Christmas Eve"
+    },
+    {
+      "month": 12,
+      "day": 25,
+      "name": "Christmas Day"
+    },
+    {
+      "month": 12,
+      "day": 30,
+      "name": "Rizal Day"
+    },
+    {
+      "month": 12,
+      "day": 31,
+      "name": "New Year's Eve"
+    }
+  ],
+  "floatingHolidays": [
+    {
+      "month": 2,
+      "day": 17,
+      "name": "Chinese New Year"
+    },
+    {
+      "month": 4,
+      "day": 2,
+      "name": "Maundy Thursday"
+    },
+    {
+      "month": 4,
+      "day": 3,
+      "name": "Good Friday"
+    },
+        {
+      "month": 8,
+      "day": 31,
+      "name": "National Heroes Day"
+    }
+  ]
+}

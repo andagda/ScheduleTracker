@@ -176,6 +176,29 @@ if ($year -and $teamSize) {
     # Define the different global variables
     $daysOfWeek = @("Su", "M", "T", "W", "Th", "F", "Sa")
     $values = "WFA,WFA-H,H,OB,WFO,WFO-H,PTO,PTH"
+    
+    # Load holidays from JSON file
+    $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $holidaysJsonPath = Join-Path $scriptPath "holidays.json"
+    $holidaysData = $null
+    $regularHolidays = @()
+    $floatingHolidays = @()
+    
+    if (Test-Path $holidaysJsonPath) {
+        try {
+            $holidaysJson = Get-Content -Path $holidaysJsonPath -Raw | ConvertFrom-Json
+            $regularHolidays = $holidaysJson.regularHolidays
+            $floatingHolidays = $holidaysJson.floatingHolidays
+            Write-Host "Loaded holidays from holidays.json" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Warning: Could not load holidays.json. Holidays will not be auto-populated." -ForegroundColor Yellow
+        }
+    }
+    else {
+        Write-Host "Warning: holidays.json not found. Holidays will not be auto-populated." -ForegroundColor Yellow
+    }
+    
     $columnMapping = @{
         2 = "B"
         3 = "C"
@@ -307,6 +330,36 @@ if ($year -and $teamSize) {
                 $validation.Add(3, 1, 1, $values)
                 $validation.IgnoreBlank = $true
                 $validation.InCellDropdown = $true
+
+                # Check if this day is a holiday and falls on a weekday
+                $dayOfMonth = $j - $fillerInt
+                $currentDate = Get-Date -Year $year -Month $month -Day $dayOfMonth
+                $dayOfWeekValue = $currentDate.DayOfWeek.value__
+                
+                # Check if it's a weekday (Monday=1 to Friday=5)
+                $isWeekday = ($dayOfWeekValue -ge 1 -and $dayOfWeekValue -le 5)
+                
+                if ($isWeekday) {
+                    # Check regular holidays
+                    $isHoliday = $false
+                    foreach ($holiday in $regularHolidays) {
+                        if ($holiday.month -eq $month -and $holiday.day -eq $dayOfMonth) {
+                            $cell.Value = "H"
+                            $isHoliday = $true
+                            break
+                        }
+                    }
+                    
+                    # Check floating holidays if not already a regular holiday
+                    if (-not $isHoliday) {
+                        foreach ($holiday in $floatingHolidays) {
+                            if ($holiday.month -eq $month -and $holiday.day -eq $dayOfMonth) {
+                                $cell.Value = "H"
+                                break
+                            }
+                        }
+                    }
+                }
 
                 SetBorders $cell
 
