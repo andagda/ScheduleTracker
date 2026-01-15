@@ -18,7 +18,7 @@ Run this command `Get-ExecutionPolicy` to check your Execution Policy.
 Then run this command `Set-ExecutionPolicy Unrestricted`
     - To get all the Details from the help file use `Get-Help .\create.schedule.ps1 -Detailed` 
     - To get the Examples from the help file details use `Get-Help .\create.schedule.ps1 -Examples`
-1. Here is what should be displayed when running the script thur file explorer or command line interface (CLI)
+1. Here is what should be displayed when running the script thru file explorer or command line interface (CLI)
 `.\create.schedule.ps1`.
     * User will be prompted to enter the year and team size.<br>
     ![image.jpg](help.images/UIScreenshot1.png)<br>
